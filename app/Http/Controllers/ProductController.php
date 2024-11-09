@@ -1,0 +1,93 @@
+<?php
+use App\Models\Product;
+use Illuminate\Http\Request;
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Illuminate\Http\Request;
+
+class ProductController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+{
+    $query = Product::query();
+
+    if ($request->has('search')) {
+        $query->where('product_id', 'like', '%' . $request->search . '%')
+              ->orWhere('description', 'like', '%' . $request->search . '%');
+    }
+
+    if ($request->has('sort_by') && in_array($request->sort_by, ['name', 'price'])) {
+        $query->orderBy($request->sort_by);
+    }
+
+    $products = $query->paginate(10);
+
+    return view('products.index', compact('products'));
+}
+
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+{
+    return view('products.create');
+}
+
+public function store(Request $request)
+{
+    $request->validate([
+        'product_id' => 'required|unique:products',
+        'name' => 'required',
+        'price' => 'required|numeric',
+    ]);
+
+    Product::create($request->all());
+
+    return redirect()->route('products.index')->with('success', 'Product created successfully');
+}
+
+
+    /**
+     * Store a newly created resource in storage.
+     */
+   
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product)
+    {
+        return view('products.show', compact('product'));
+    }
+    
+    public function edit(Product $product)
+    {
+        return view('products.edit', compact('product'));
+    }
+    
+    public function update(Request $request, Product $product)
+    {
+        $request->validate([
+            'product_id' => 'required|unique:products,product_id,' . $product->id,
+            'name' => 'required',
+            'price' => 'required|numeric',
+        ]);
+    
+        $product->update($request->all());
+    
+        return redirect()->route('products.index')->with('success', 'Product updated successfully');
+    }
+    
+    public function destroy(Product $product)
+    {
+        $product->delete();
+    
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully');
+    }
+    
+}
